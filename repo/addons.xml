@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addons>
+<addon id="repository.baldpanther"
+       name="Bald Panther Repository"
+       version="1.0.0"
+       provider-name="BaldPanther">
+  <extension point="xbmc.addon.repository" name="Bald Panther Repository">
+    <dir>
+      <info compressed="false">https://baldpanther.github.io/kodi/repo/addons.xml</info>
+      <checksum>https://baldpanther.github.io/kodi/repo/addons.xml.md5</checksum>
+      <datadir zip="true">https://baldpanther.github.io/kodi/repo/</datadir>
+    </dir>
+  </extension>
+  <extension point="xbmc.addon.metadata">
+    <summary lang="en_GB">Bald Panther personal Kodi add-ons</summary>
+    <summary lang="ru_RU">Личные аддоны Kodi (Bald Panther)</summary>
+    <description lang="en_GB">Personal repository hosting Bald Panther Kodi add-ons.</description>
+    <description lang="ru_RU">Личный репозиторий с аддонами Kodi.</description>
+    <platform>all</platform>
+  </extension>
+</addon>
+<addon id="script.localartrefresh"
+       name="Local Artwork Refresh"
+       version="0.1.1"
+       provider-name="Codex">
+  <requires>
+    <import addon="xbmc.python" version="3.0.0"/>
+  </requires>
+  <extension point="xbmc.python.script" library="default.py"/>
+  <extension point="xbmc.addon.metadata">
+    <summary lang="en_GB">Refresh movie artwork from local files</summary>
+    <summary lang="ru_RU">Обновление постеров и фанарта фильмов из локальных файлов</summary>
+    <description lang="en_GB">Finds local artwork next to movie files, updates Kodi movie artwork records, and removes matching texture-cache entries through Kodi JSON-RPC.</description>
+    <description lang="ru_RU">Ищет локальные картинки рядом с файлами фильмов, обновляет artwork в медиатеке Kodi и точечно сбрасывает соответствующие записи texture-cache через JSON-RPC Kodi.</description>
+    <platform>all</platform>
+    <license>MIT</license>
+  </extension>
+</addon>
+</addons>

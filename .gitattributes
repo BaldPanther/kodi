@@ -1,0 +1,4 @@
+# Каталог репозитория: фиксируем LF, чтобы md5 совпадал на любой ОС
+repo/addons.xml text eol=lf
+repo/addons.xml.md5 text eol=lf
+*.zip binary
