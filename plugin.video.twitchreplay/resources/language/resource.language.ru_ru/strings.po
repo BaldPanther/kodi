@@ -60,3 +60,27 @@ msgstr "Каналы (через запятую)"
 msgctxt "#30012"
 msgid "live"
 msgstr "в эфире"
+
+msgctxt "#30013"
+msgid "Video quality"
+msgstr "Качество видео"
+
+msgctxt "#30014"
+msgid "Source (as broadcast)"
+msgstr "Исходное (как у стримера)"
+
+msgctxt "#30015"
+msgid "Up to 1080p"
+msgstr "До 1080p"
+
+msgctxt "#30016"
+msgid "Up to 720p"
+msgstr "До 720p"
+
+msgctxt "#30017"
+msgid "Up to 480p"
+msgstr "До 480p"
+
+msgctxt "#30018"
+msgid "Up to 360p"
+msgstr "До 360p"

@@ -1,29 +1,36 @@
 # -*- coding: utf-8 -*-
 """Локальный сервер, который отдаёт плееру подготовленный список фрагментов.
 
-Адрес: http://127.0.0.1:<порт>/v/<номер записи>.m3u8 — запись целиком, с перемоткой;
-с параметром ?live=1 — идущая трансляция с текущего момента.
+Адрес: http://127.0.0.1:<порт>/v/<номер записи>.m3u8 — запись целиком, с перемоткой.
+Параметры: live=1 — идущая трансляция с текущего момента; q=720 (1080, 480, 360) — качество
+не выше указанного, без q или q=source — исходник.
 Не зависит от Kodi.
 """
 
 import re
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from urllib.parse import parse_qs, urlsplit
 
 from . import twitch
 
 PORT_PROPERTY = "twitchreplay.port"  # свойство главного окна Kodi, в котором служба сообщает свой порт
 
-_PATH_RE = re.compile(r"^/v/(\d+)\.m3u8(?:\?(.*))?$")
+_PATH_RE = re.compile(r"^/v/(\d+)\.m3u8$")
 
 
 class _Handler(BaseHTTPRequestHandler):
     def _match(self):
-        match = _PATH_RE.match(self.path)
+        parts = urlsplit(self.path)
+        match = _PATH_RE.match(parts.path)
         if not match:
             self.send_error(404)
             return None
-        return match.group(1), "live=1" in (match.group(2) or "")
+        query = parse_qs(parts.query)
+        quality = (query.get("q") or ["source"])[0]
+        if quality not in twitch.QUALITIES:
+            quality = "source"
+        return match.group(1), query.get("live") == ["1"], quality
 
     def do_HEAD(self):
         if self._match():
@@ -35,11 +42,11 @@ class _Handler(BaseHTTPRequestHandler):
         found = self._match()
         if not found:
             return
-        video_id, live = found
+        video_id, live, quality = found
         try:
-            playlist = self.server.playlist(video_id, live)
+            playlist = self.server.playlist(video_id, live, quality)
             if playlist is None:
-                # исходника нет — отправляем плеер к обычному списку качеств Twitch
+                # папки записи недоступны — отправляем плеер к обычному списку качеств Twitch
                 self.send_response(302)
                 self.send_header("Location", twitch.official_url(video_id))
                 self.send_header("Content-Length", "0")
@@ -66,15 +73,24 @@ class _Server(ThreadingHTTPServer):
     def __init__(self, address):
         ThreadingHTTPServer.__init__(self, address, _Handler)
         self._bases = {}
+        self._renditions = {}
 
-    def playlist(self, video_id, live):
+    def playlist(self, video_id, live, quality):
         base = self._bases.get(video_id)
         if base is None:
             base = twitch.video_base(video_id)
             if base is None:
                 return None
             self._bases[video_id] = base
-        return twitch.source_playlist(base, live)
+        # во время эфира плеер перечитывает список каждые несколько секунд — выбор качества запоминается
+        rendition = self._renditions.get((video_id, quality))
+        if rendition is None:
+            rendition = twitch.pick_rendition(video_id, base, quality)
+            self._renditions[(video_id, quality)] = rendition
+        playlist = twitch.media_playlist(base, rendition, live)
+        if playlist is None and rendition != twitch.SOURCE:
+            playlist = twitch.media_playlist(base, twitch.SOURCE, live)
+        return playlist
 
 
 def start(port=0):

@@ -60,3 +60,27 @@ msgstr ""
 msgctxt "#30012"
 msgid "live"
 msgstr ""
+
+msgctxt "#30013"
+msgid "Video quality"
+msgstr ""
+
+msgctxt "#30014"
+msgid "Source (as broadcast)"
+msgstr ""
+
+msgctxt "#30015"
+msgid "Up to 1080p"
+msgstr ""
+
+msgctxt "#30016"
+msgid "Up to 720p"
+msgstr ""
+
+msgctxt "#30017"
+msgid "Up to 480p"
+msgstr ""
+
+msgctxt "#30018"
+msgid "Up to 360p"
+msgstr ""

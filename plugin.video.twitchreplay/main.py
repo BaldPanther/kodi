@@ -78,6 +78,32 @@ def remove_channel(login):
     xbmc.executebuiltin("Container.Refresh")
 
 
+# --- качество ---------------------------------------------------------------
+
+QUALITY_LABELS = {"source": 30014, "1080": 30015, "720": 30016, "480": 30017, "360": 30018}
+
+
+def current_quality():
+    value = ADDON.getSetting("quality")
+    return value if value in twitch.QUALITIES else "source"
+
+
+def choose_quality():
+    options = [tr(QUALITY_LABELS[value]) for value in twitch.QUALITIES]
+    index = xbmcgui.Dialog().select(tr(30013), options, preselect=twitch.QUALITIES.index(current_quality()))
+    if index < 0:
+        return
+    ADDON.setSetting("quality", twitch.QUALITIES[index])
+    xbmc.executebuiltin("Container.Refresh")
+
+
+def add_quality_item():
+    label = "[COLOR gray]{}:[/COLOR] {}".format(tr(30013), tr(QUALITY_LABELS[current_quality()]))
+    item = folder_item(label)
+    item.setProperty("IsPlayable", "false")
+    xbmcplugin.addDirectoryItem(HANDLE, build_url(action="quality"), item, isFolder=False)
+
+
 # --- списки -----------------------------------------------------------------
 
 def format_date(iso):
@@ -149,6 +175,7 @@ def list_channels(logins=None):
         ])
         xbmcplugin.addDirectoryItem(HANDLE, build_url(action="channel", login=login), item, isFolder=True)
     xbmcplugin.addDirectoryItem(HANDLE, build_url(action="add"), folder_item(tr(30000)), isFolder=False)
+    add_quality_item()
     xbmcplugin.endOfDirectory(HANDLE, cacheToDisc=False)
 
 
@@ -195,6 +222,7 @@ def list_channel(login, with_channels_entry=False):
     if not found["videos"]:
         xbmcplugin.addDirectoryItem(HANDLE, build_url(action="none"), folder_item(tr(30007), found["avatar"]),
                                     isFolder=False)
+    add_quality_item()
     if with_channels_entry:
         xbmcplugin.addDirectoryItem(HANDLE, build_url(action="channels"), folder_item(tr(30001)), isFolder=True)
     xbmcplugin.endOfDirectory(HANDLE, cacheToDisc=False)
@@ -204,14 +232,21 @@ def list_channel(login, with_channels_entry=False):
 
 def play(video_id, live=False):
     port = xbmcgui.Window(10000).getProperty(PORT_PROPERTY)
+    quality = current_quality()
     try:
         if port:
-            url = "http://127.0.0.1:{}/v/{}.m3u8{}".format(port, video_id, "?live=1" if live else "")
+            params = {"q": quality}
+            if live:
+                params["live"] = "1"
+            url = "http://127.0.0.1:{}/v/{}.m3u8?{}".format(port, video_id, urlencode(params))
         else:
-            # служба не запущена: играем исходник как есть (участки с приглушённым звуком могут не открыться)
-            log("service is not running, playing the source playlist directly")
+            # служба не запущена: играем список как есть (участки с приглушённым звуком могут не открыться)
+            log("service is not running, playing the playlist directly")
             base = twitch.video_base(video_id)
-            url = twitch.source_url(base) if base else twitch.official_url(video_id)
+            if base:
+                url = twitch.playlist_url(base, twitch.pick_rendition(video_id, base, quality))
+            else:
+                url = twitch.official_url(video_id)
     except twitch.TwitchError as error:
         log(error)
         notify(tr(30008), error=True)
@@ -236,6 +271,8 @@ def router(query):
         add_channel(params.get("login"))
     elif action == "remove":
         remove_channel(params["login"])
+    elif action == "quality":
+        choose_quality()
     elif action == "play":
         play(params["id"], live=params.get("live") == "1")
 

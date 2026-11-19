@@ -19,6 +19,11 @@ CA_FILE = None  # путь к cacert.pem; задаёт обёртка Kodi
 
 _LOGIN_RE = re.compile(r"^[a-z0-9_]{2,25}$")
 
+SOURCE = "chunked"  # папка исходника записи
+QUALITIES = ("source", "1080", "720", "480", "360")  # значения настройки «Качество видео»
+_FALLBACK_RENDITIONS = (("1080p60", 1080), ("1080p30", 1080), ("720p60", 720), ("720p30", 720),
+                        ("480p30", 480), ("360p30", 360), ("160p30", 160))
+
 _CHANNEL_QUERY = """query($login: String!, $n: Int!) {
   user(login: $login) {
     login displayName profileImageURL(width: 300)
@@ -143,7 +148,8 @@ def video_base(video_id):
 
 
 def official_url(video_id):
-    """Обычный список качеств Twitch — запасной путь, если исходник недоступен."""
+    """Обычный список качеств Twitch, урезанный по региону: по нему видно, какие качества есть у записи,
+    и на него же отправляется плеер, если папки записи недоступны."""
     token = gql(_TOKEN_QUERY, {"id": str(video_id)}).get("videoPlaybackAccessToken")
     if not token:
         raise TwitchError("no playback token")
@@ -154,18 +160,63 @@ def official_url(video_id):
     return "https://usher.ttvnw.net/vod/%s.m3u8?%s" % (video_id, query)
 
 
-def source_url(base):
-    return base + "chunked/index-dvr.m3u8"
+def renditions(video_id, base):
+    """Качества записи: [(папка, высота кадра)].
+
+    Список берётся у Twitch; если он не ответил — проверяются обычные папки. Исходник («chunked»)
+    есть всегда; его высота None, если Twitch не включил его в список, то есть он выше допустимого
+    в регионе (1440p и больше).
+    """
+    found = []
+    try:
+        for line in _open(official_url(video_id)).splitlines():
+            if line.startswith("#EXT-X-STREAM-INF"):
+                name = re.search(r'VIDEO="([^"]+)"', line)
+                height = re.search(r"RESOLUTION=\d+x(\d+)", line)
+                if name and height:
+                    found.append((name.group(1), int(height.group(1))))
+    except (TwitchError, urllib.error.URLError, OSError, ValueError):
+        found = []
+    if not found:
+        for name, height in _FALLBACK_RENDITIONS:
+            try:
+                if "#EXTINF" in _open(playlist_url(base, name)):
+                    found.append((name, height))
+            except (urllib.error.URLError, OSError):
+                pass
+    if not any(name == SOURCE for name, _ in found):
+        found.append((SOURCE, None))
+    return found
 
 
-def rewrite_playlist(text, base, live=False):
-    """Список фрагментов исходника, пригодный для плеера.
+def pick_rendition(video_id, base, quality):
+    """Папка записи для выбранного качества.
+
+    quality — «source» или наибольшая высота кадра («1080», «720», …). Берётся лучшее качество,
+    которое не выше выбранного; если такого нет — самое низкое из имеющихся.
+    """
+    if quality not in QUALITIES or quality == "source":
+        return SOURCE
+    limit = int(quality)
+    known = [(height, name) for name, height in renditions(video_id, base) if height]
+    fitting = [item for item in known if item[0] <= limit]
+    if fitting:
+        return max(fitting)[1]
+    return min(known)[1] if known else SOURCE
+
+
+def playlist_url(base, rendition=SOURCE):
+    return base + rendition + "/index-dvr.m3u8"
+
+
+def rewrite_playlist(text, base, live=False, rendition=SOURCE):
+    """Список фрагментов, пригодный для плеера.
 
     Адреса становятся полными. Фрагменты с приглушённым звуком в исходном списке названы
-    «N-unmuted», но сервер отдаёт их только как «N-muted». Для идущей трансляции (live=False)
-    список закрывается, чтобы плеер видел обычную запись с перемоткой.
+    «N-unmuted», но сервер отдаёт их только как «N-muted». Список записи (live=False) закрывается,
+    даже если трансляция ещё идёт, чтобы плеер видел обычную запись с перемоткой.
     """
-    prefix = base + "chunked/"
+    prefix = base + rendition + "/"
     lines = []
     ended = False
     for line in text.splitlines():
@@ -187,14 +238,14 @@ def rewrite_playlist(text, base, live=False):
     return "\n".join(lines) + "\n"
 
 
-def source_playlist(base, live=False):
-    """Скачать и подготовить список фрагментов исходника. None, если исходник недоступен."""
+def media_playlist(base, rendition=SOURCE, live=False):
+    """Скачать и подготовить список фрагментов. None, если такого качества нет."""
     try:
-        text = _open(source_url(base))
+        text = _open(playlist_url(base, rendition))
     except urllib.error.HTTPError:
         return None
     except (urllib.error.URLError, OSError) as error:
         raise TwitchError("playlist: %s" % error)
     if "#EXTINF" not in text:
         return None
-    return rewrite_playlist(text, base, live)
+    return rewrite_playlist(text, base, live, rendition)
