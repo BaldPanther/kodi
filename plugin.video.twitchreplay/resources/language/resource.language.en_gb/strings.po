@@ -1,0 +1,62 @@
+# Kodi Media Center language file
+# Addon Name: Replay
+# Addon id: plugin.video.twitchreplay
+msgid ""
+msgstr ""
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: en_GB\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgctxt "#30000"
+msgid "Add channel"
+msgstr ""
+
+msgctxt "#30001"
+msgid "Channels"
+msgstr ""
+
+msgctxt "#30002"
+msgid "Channel name or link"
+msgstr ""
+
+msgctxt "#30003"
+msgid "Channel not found"
+msgstr ""
+
+msgctxt "#30004"
+msgid "Remove channel"
+msgstr ""
+
+msgctxt "#30005"
+msgid "Live"
+msgstr ""
+
+msgctxt "#30006"
+msgid "recording in progress"
+msgstr ""
+
+msgctxt "#30007"
+msgid "No recordings"
+msgstr ""
+
+msgctxt "#30008"
+msgid "Twitch is not responding"
+msgstr ""
+
+msgctxt "#30009"
+msgid "The broadcast from the current moment, about a minute behind."
+msgstr ""
+
+msgctxt "#30010"
+msgid "General"
+msgstr ""
+
+msgctxt "#30011"
+msgid "Channels (comma-separated)"
+msgstr ""
+
+msgctxt "#30012"
+msgid "live"
+msgstr ""

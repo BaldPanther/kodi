@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addon id="plugin.video.twitchreplay"
+       name="Replay"
+       version="0.1.0"
+       provider-name="BaldPanther">
+  <requires>
+    <import addon="xbmc.python" version="3.0.0"/>
+  </requires>
+  <extension point="xbmc.python.pluginsource" library="main.py">
+    <provides>video</provides>
+  </extension>
+  <extension point="xbmc.service" library="service.py"/>
+  <extension point="xbmc.addon.metadata">
+    <summary lang="en_GB">Twitch recordings in source quality</summary>
+    <summary lang="ru_RU">Записи Twitch в исходном качестве</summary>
+    <description lang="en_GB">Lists the recordings of the Twitch channels you add and plays them in the quality the streamer broadcast in. A broadcast that is still going can be watched from the current moment, about a minute behind. Playback position and playback speed are handled by Kodi.</description>
+    <description lang="ru_RU">Показывает записи выбранных каналов Twitch и играет их в том качестве, в котором вёл трансляцию стример. Идущую трансляцию можно смотреть с текущего момента, с отставанием около минуты. Место остановки и скорость воспроизведения — средствами Kodi.</description>
+    <platform>all</platform>
+    <license>MIT</license>
+    <assets>
+      <icon>icon.png</icon>
+    </assets>
+  </extension>
+</addon>
